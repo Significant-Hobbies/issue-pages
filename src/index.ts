@@ -1,4 +1,6 @@
 import { type Context, Hono } from "hono";
+import { createAppHealthClient, type AppHealthClient } from "@saas-maker/app-health";
+import { honoMiddleware } from "@saas-maker/app-health/hono";
 import { decideModeration, listModerationQueue } from "./admin/handler";
 import {
   getArticleByIssueNumber,
@@ -57,6 +59,7 @@ import { handleGitHubWebhook } from "./webhooks/handler";
 
 type AppEnv = { Bindings: AppBindings };
 const app = new Hono<AppEnv>();
+let endpointHealthClient: AppHealthClient | null = null;
 const pageSize = 12;
 const publicOrigin = "https://issues.sarthakagrawal.dev";
 const homepageMarkdown = `# IssuePages
@@ -116,6 +119,25 @@ app.use("*", async (c, next) => {
   await next();
   c.res = securityHeaders(c.res, c.req.path.startsWith("/embed/"));
 });
+
+app.use(
+  "*",
+  honoMiddleware<AppEnv>({
+    release: "0.1.0",
+    client: (c) => {
+      const key = c.env.APP_HEALTH_INGEST_KEY;
+      if (!key) return null;
+      endpointHealthClient ??= createAppHealthClient({
+        key,
+        environment: c.env.APP_HEALTH_ENVIRONMENT,
+        endpoint: "https://ingest.sassmaker.com/v1/ingest",
+        runtime: "worker",
+        disableTimer: true,
+      });
+      return endpointHealthClient;
+    },
+  }),
+);
 
 function html(c: Context<AppEnv>, title: string, body: string): Response {
   const response = c.html(layout(siteIdentity(c.env), title, body, { canonicalPath: c.req.path }));
