@@ -197,12 +197,15 @@ export function layout(
   ${options.mermaid ? '<script type="module" src="/assets/mermaid.js?v=20260825-2"></script>' : ""}
   <script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","ybch2c99wz");window.clarity("set","project_id","issue-pages");</script>
   <script src="/app-health-log.js" defer></script>
+  <script src="https://health.sassmaker.com/tracker.js" data-key="ahk_pub_360a0c19017b6745e5442b17d3e6bc2d9cf2f3e2589b5b3a6fb252354bfdcd77" data-project="app-import-783e7446c5372a124641919fba6f29496840ef28f5cf0d11f85330069a3c51e2" data-identity="persistent" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   ${header(site)}
   <main id="main">${body}</main>
   ${footer(site)}
+  <saas-maker-newsletter-capture product-name="IssuePages" catalog-id="issue-pages" kind="newsletter" source="footer" privacy-url="https://sassmaker.com/privacy"></saas-maker-newsletter-capture>
+  <script type="module" src="https://sassmaker.com/newsletter-capture.js"></script>
   <script src="https://sassmaker.com/project-strip.js" data-project="issue-pages" defer></script>
   <script src="https://sassmaker.com/ai-chat-footer.js" data-name="IssuePages" defer></script>
 </body>
@@ -246,7 +249,7 @@ export function homePage(
     <p class="field-note">This website is a GitHub repository.</p>
     <h1 id="home-title">Open an issue and leave your page on the internet.</h1>
     <p class="hero-copy">Write in Markdown. The issue becomes a public page, and its edits and discussion stay connected to GitHub.</p>
-    <div class="hero-actions"><a class="button" href="${publishHref(site)}" rel="external">${ownerOnly ? "Open a pilot issue" : "Publish something"} <span aria-hidden="true">↗</span></a><a class="text-link" href="${repoHref(site)}" rel="external noopener noreferrer" target="_blank" aria-label="GitHub repository" title="GitHub repository">${githubIcon}</a></div>
+    <div class="hero-actions"><a class="button" href="${publishHref(site)}" rel="external" data-app-health-event="publish_started">${ownerOnly ? "Open a pilot issue" : "Publish something"} <span aria-hidden="true">↗</span></a><a class="text-link" href="${repoHref(site)}" rel="external noopener noreferrer" target="_blank" aria-label="GitHub repository" title="GitHub repository">${githubIcon}</a></div>
     ${
       ownerOnly
         ? `<p class="pilot-notice"><strong>Owner-only pilot.</strong> Your GitHub issue is public immediately. Pages from @${escapeHtml(site.owner)} appear here automatically; everyone else waits here for review until public moderation is connected.</p>`
@@ -259,7 +262,7 @@ export function homePage(
   </section>
   <section class="reader-callout" aria-labelledby="reader-callout-title">
     <div><h2 id="reader-callout-title">Read any public repository</h2><p>Turn its issues into a quiet, read-only publication.</p></div>
-    <div class="reader-callout__actions"><a class="text-link" href="/read">Open a repository →</a><a class="text-link" href="/embed">Embed one →</a></div>
+    <div class="reader-callout__actions"><a class="text-link" href="/read" data-app-health-event="repository_reader_opened">Open a repository →</a><a class="text-link" href="/embed" data-app-health-event="embed_builder_opened">Embed one →</a></div>
   </section>
   ${
     updatedList

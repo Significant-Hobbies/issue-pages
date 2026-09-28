@@ -59,6 +59,7 @@ function send(event: string, options: Options = {}): void {
 declare global {
   interface Window {
     appHealthLog: typeof send;
+    appHealth?: { track: (name: string) => void };
   }
 }
 window.appHealthLog = send;
@@ -78,6 +79,9 @@ document.addEventListener(
 document.addEventListener(
   "click",
   (event) => {
+    const action = (event.target as Element | null)?.closest("[data-app-health-event]");
+    const actionName = action?.getAttribute("data-app-health-event");
+    if (actionName) window.appHealth?.track(actionName);
     const target = (event.target as Element | null)?.closest("[data-log]");
     const name = target?.getAttribute("data-log");
     if (name) {
