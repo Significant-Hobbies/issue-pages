@@ -30,6 +30,7 @@
     "client:build:log": "esbuild src/client/app-health-log.ts --bundle --format=iife --minify --outfile=public/app-health-log.js"
   },
   "dependencies": {
+    "@saas-maker/app-health": "https://github.com/sass-maker/app-health/releases/download/node-v0.4.0/saas-maker-app-health-0.4.0.tgz",
     "hast-util-from-html": "^2.0.3",
     "hast-util-sanitize": "^5.0.2",
     "hast-util-to-html": "^9.0.5",
