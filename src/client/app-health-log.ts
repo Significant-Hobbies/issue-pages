@@ -59,7 +59,11 @@ function send(event: string, options: Options = {}): void {
 declare global {
   interface Window {
     appHealthLog: typeof send;
-    appHealth?: { track: (name: string) => void; flush?: () => Promise<unknown> | undefined };
+    appHealth?: {
+      track: (name: string) => void;
+      flush?: () => Promise<unknown> | undefined;
+      diagnostics?: () => { queued: number };
+    };
   }
 }
 window.appHealthLog = send;
@@ -102,7 +106,16 @@ document.addEventListener(
           window.location.assign(action.href);
         };
         window.setTimeout(navigate, 800);
-        Promise.resolve(window.appHealth.flush?.())
+        const tracker = window.appHealth;
+        const flushQueued = async () => {
+          const deadline = Date.now() + 650;
+          do {
+            await tracker?.flush?.();
+            if (!tracker?.diagnostics?.().queued) return;
+            await new Promise((resolve) => window.setTimeout(resolve, 50));
+          } while (Date.now() < deadline);
+        };
+        flushQueued()
           .catch(() => {})
           .finally(navigate);
       }
