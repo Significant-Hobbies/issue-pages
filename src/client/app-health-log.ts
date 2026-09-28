@@ -105,10 +105,10 @@ document.addEventListener(
           navigated = true;
           window.location.assign(action.href);
         };
-        window.setTimeout(navigate, 800);
+        window.setTimeout(navigate, 4500);
         const tracker = window.appHealth;
         const flushQueued = async () => {
-          const deadline = Date.now() + 650;
+          const deadline = Date.now() + 4_500;
           do {
             await tracker?.flush?.();
             if (!tracker?.diagnostics?.().queued) return;
