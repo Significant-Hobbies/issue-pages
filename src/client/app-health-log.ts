@@ -59,7 +59,7 @@ function send(event: string, options: Options = {}): void {
 declare global {
   interface Window {
     appHealthLog: typeof send;
-    appHealth?: { track: (name: string) => void };
+    appHealth?: { track: (name: string) => void; flush?: () => Promise<unknown> | undefined };
   }
 }
 window.appHealthLog = send;
@@ -81,7 +81,32 @@ document.addEventListener(
   (event) => {
     const action = (event.target as Element | null)?.closest("[data-app-health-event]");
     const actionName = action?.getAttribute("data-app-health-event");
-    if (actionName) window.appHealth?.track(actionName);
+    if (actionName && window.appHealth) {
+      window.appHealth.track(actionName);
+      if (
+        action instanceof HTMLAnchorElement &&
+        event instanceof MouseEvent &&
+        event.button === 0 &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.shiftKey &&
+        !event.altKey &&
+        action.target !== "_blank" &&
+        !action.hasAttribute("download")
+      ) {
+        event.preventDefault();
+        let navigated = false;
+        const navigate = () => {
+          if (navigated) return;
+          navigated = true;
+          window.location.assign(action.href);
+        };
+        window.setTimeout(navigate, 800);
+        Promise.resolve(window.appHealth.flush?.())
+          .catch(() => {})
+          .finally(navigate);
+      }
+    }
     const target = (event.target as Element | null)?.closest("[data-log]");
     const name = target?.getAttribute("data-log");
     if (name) {

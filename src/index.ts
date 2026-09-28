@@ -97,7 +97,7 @@ function securityHeaders(response: Response, embeddable = false): Response {
   const headers = new Headers(response.headers);
   headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self' https://sassmaker.com https://static.cloudflareinsights.com; connect-src 'self' https://sassmaker.com https://ingest.sassmaker.com https://cloudflareinsights.com; frame-ancestors ${embeddable ? "https: http:" : "'none'"}; base-uri 'none'; form-action 'self'`,
+    `default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self' https://sassmaker.com https://health.sassmaker.com https://static.cloudflareinsights.com; connect-src 'self' https://sassmaker.com https://api.sassmaker.com https://ingest.sassmaker.com https://cloudflareinsights.com; frame-ancestors ${embeddable ? "https: http:" : "'none'"}; base-uri 'none'; form-action 'self'`,
   );
   headers.set("Cross-Origin-Opener-Policy", "same-origin");
   headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
