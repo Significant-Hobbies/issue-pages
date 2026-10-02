@@ -448,6 +448,8 @@ async function githubRequest(
       !publicIssuePath.test(target.pathname)
     )
       throw new GitHubReaderError(503, "unavailable");
+    // Repository moves must not change pagination bounds or user-selected filters.
+    target.search = url.search;
     url = target;
   }
 }
