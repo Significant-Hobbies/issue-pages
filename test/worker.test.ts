@@ -18,6 +18,7 @@ const readerRequests: Array<{
   url: string;
   headers: Headers;
   redirect: string | undefined;
+  signal: AbortSignal | null | undefined;
   cf: RequestInitCfProperties | undefined;
 }> = [];
 
@@ -191,8 +192,56 @@ beforeAll(() => {
         url: url.toString(),
         headers,
         redirect: init?.redirect,
+        signal: init?.signal,
         cf: init?.cf,
       });
+      if (/^\/repos\/acme\/moved(?:-bare)?\/issues$/.test(url.pathname)) {
+        return new Response(null, {
+          status: 301,
+          headers: {
+            Location: url.pathname.includes("moved-bare")
+              ? "/repositories/123/issues"
+              : "/repositories/123/issues?per_page=100&page=500",
+          },
+        });
+      }
+      const rejectedRedirects: Record<string, string> = {
+        "http-redirect": "http://api.github.com/repositories/123/issues",
+        "credentials-redirect": "https://user:password@api.github.com/repositories/123/issues",
+        "port-redirect": "https://api.github.com:444/repositories/123/issues",
+        "fragment-redirect": "https://api.github.com/repositories/123/issues#fragment",
+      };
+      const rejectedLocation = rejectedRedirects[url.pathname.split("/")[3] ?? ""];
+      if (rejectedLocation) {
+        return new Response(null, { status: 302, headers: { Location: rejectedLocation } });
+      }
+      if (url.pathname.startsWith("/repos/acme/two-moves/issues/7")) {
+        return new Response(null, {
+          status: 308,
+          headers: { Location: url.pathname.replace("/repos/acme/two-moves", "/repositories/124") },
+        });
+      }
+      if (url.pathname.startsWith("/repositories/124/issues/7")) {
+        return new Response(null, {
+          status: 302,
+          headers: { Location: url.pathname.replace("/repositories/124", "/repositories/125") },
+        });
+      }
+      if (url.pathname === "/repos/acme/unsafe-redirect/issues") {
+        return new Response(null, {
+          status: 302,
+          headers: { Location: "https://example.invalid/private" },
+        });
+      }
+      if (url.pathname === "/repos/acme/unrelated-redirect/issues") {
+        return new Response(null, {
+          status: 301,
+          headers: { Location: "https://api.github.com/user" },
+        });
+      }
+      if (url.pathname === "/repos/acme/loop-redirect/issues") {
+        return new Response(null, { status: 307, headers: { Location: url.toString() } });
+      }
       if (
         url.pathname.includes("/not-modified/") &&
         headers.get("if-none-match") === '"issue-etag"'
@@ -304,6 +353,17 @@ describe("public Worker routes", () => {
     expect(await response.text()).toContain("A tested public page");
   });
 
+  it("keeps canonical publishing, discovery, and search independent of GitHub", async () => {
+    const beforeReader = readerRequests.length;
+    const beforeReactions = reactionRequests.length;
+    for (const path of ["/", "/articles/42/a-tested-public-page", "/search?q=tested"]) {
+      const response = await exports.default.fetch(new Request(`http://localhost:8787${path}`));
+      expect(response.status).toBe(200);
+    }
+    expect(readerRequests).toHaveLength(beforeReader);
+    expect(reactionRequests).toHaveLength(beforeReactions);
+  });
+
   it("redirects a validated repository input into the noindex reader namespace", async () => {
     const response = await exports.default.fetch(
       new Request("http://localhost:8787/read?repo=https%3A%2F%2Fgithub.com%2Facme%2Fnotes", {
@@ -376,6 +436,86 @@ describe("public Worker routes", () => {
       beforeArticles,
     );
   });
+
+  it.each(["moved", "moved-bare"])(
+    "follows %s without forwarding credentials or changing reader bounds",
+    async (repo) => {
+      const before = readerRequests.length;
+      const response = await exports.default.fetch(
+        new Request(`http://localhost:8787/github/acme/${repo}`, {
+          headers: { Authorization: "Bearer incoming-token", Cookie: "private=value" },
+        }),
+      );
+      expect(response.status).toBe(200);
+      const body = await response.text();
+      expect(body).toContain("A public reader issue");
+      expect(body).toContain("ai-chat-footer.js");
+      expect(body).toContain("project-strip.js");
+      expect(body).toContain("saas-maker-newsletter-capture");
+      const requests = readerRequests.slice(before);
+      expect(requests).toHaveLength(2);
+      const [original, redirected] = requests;
+      if (!original || !redirected) throw new Error("Expected the original and redirected request");
+      expect(new URL(redirected.url).search).toBe(new URL(original.url).search);
+      expect(new URL(redirected.url).pathname).toBe("/repositories/123/issues");
+      expect(original.signal).toBeInstanceOf(AbortSignal);
+      expect(redirected.signal).toBe(original.signal);
+      for (const request of requests) {
+        expect(request.redirect).toBe("manual");
+        expect(request.headers.has("authorization")).toBe(false);
+        expect(request.headers.has("cookie")).toBe(false);
+      }
+    },
+  );
+
+  it.each([
+    "unsafe-redirect",
+    "unrelated-redirect",
+    "loop-redirect",
+    "http-redirect",
+    "credentials-redirect",
+    "port-redirect",
+    "fragment-redirect",
+  ])("rejects %s and offers a distinct recovery path without promotional footers", async (repo) => {
+    const before = readerRequests.length;
+    const response = await exports.default.fetch(
+      new Request(`http://localhost:8787/github/acme/${repo}`),
+    );
+    expect(response.status).toBe(503);
+    expect(readerRequests.slice(before)).toHaveLength(repo === "loop-redirect" ? 3 : 1);
+    const body = await response.text();
+    expect(body).toContain("Try again");
+    expect(body).toContain(`href="https://github.com/acme/${repo}/issues"`);
+    expect(body).toContain("Open issues on GitHub");
+    expect(body).not.toContain("ai-chat-footer.js");
+    expect(body).not.toContain("project-strip.js");
+    expect(body).not.toContain("saas-maker-newsletter-capture");
+    expect(body).toContain("<footer");
+  });
+
+  it.each(["a-public-reader-issue", "discussion"])(
+    "follows two public issue/comment moves for %s with one timeout",
+    async (suffix) => {
+      const before = readerRequests.length;
+      const beforeArticles = await env.DB.prepare("SELECT COUNT(*) AS count FROM articles").first();
+      const response = await exports.default.fetch(
+        new Request(`http://localhost:8787/github/acme/two-moves/issues/7/${suffix}`),
+      );
+      expect(response.status).toBe(200);
+      const requests = readerRequests.slice(before);
+      expect(requests).toHaveLength(3);
+      for (const request of requests) {
+        expect(new URL(request.url).search).toBe(new URL(requests[0]?.url ?? "").search);
+        expect(request.signal).toBe(requests[0]?.signal);
+        expect(request.redirect).toBe("manual");
+        expect(request.headers.has("authorization")).toBe(false);
+        expect(request.headers.has("cookie")).toBe(false);
+      }
+      await expect(
+        env.DB.prepare("SELECT COUNT(*) AS count FROM articles").first(),
+      ).resolves.toEqual(beforeArticles);
+    },
+  );
 
   it("renders a frame-safe, styled, paginated repository publication", async () => {
     const response = await exports.default.fetch(

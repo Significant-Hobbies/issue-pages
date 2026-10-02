@@ -413,18 +413,45 @@ async function githubRequest(
     "X-GitHub-Api-Version": API_VERSION,
   });
   if (etag) headers.set("If-None-Match", etag);
-  return fetch(`${GITHUB_API}${path}`, {
-    headers,
-    redirect: "manual",
-    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    cf: {
-      cacheEverything: true,
-      cacheTtlByStatus: {
-        "200-299": FRESH_TTL_SECONDS,
-        "300-599": 0,
+  const signal = AbortSignal.timeout(UPSTREAM_TIMEOUT_MS);
+  let url = new URL(`${GITHUB_API}${path}`);
+  for (let redirects = 0; ; redirects += 1) {
+    const response = await fetch(url.toString(), {
+      headers,
+      redirect: "manual",
+      signal,
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: {
+          "200-299": FRESH_TTL_SECONDS,
+          "300-599": 0,
+        },
       },
-    },
-  });
+    });
+    if (![301, 302, 303, 307, 308].includes(response.status)) return response;
+    const location = response.headers.get("Location");
+    await response.body?.cancel();
+    if (!location || redirects >= 2) throw new GitHubReaderError(503, "unavailable");
+    let target: URL;
+    try {
+      target = new URL(location, url);
+    } catch {
+      throw new GitHubReaderError(503, "unavailable");
+    }
+    const publicIssuePath =
+      /^\/(?:repositories\/[1-9]\d*|repos\/[a-z\d-]+\/[a-z\d._-]+)\/issues(?:\/[1-9]\d*(?:\/comments)?)?$/i;
+    if (
+      target.origin !== GITHUB_API ||
+      target.username ||
+      target.password ||
+      target.hash ||
+      !publicIssuePath.test(target.pathname)
+    )
+      throw new GitHubReaderError(503, "unavailable");
+    // Repository moves must not change pagination bounds or user-selected filters.
+    target.search = url.search;
+    url = target;
+  }
 }
 
 async function cachedGitHubRead<T>(options: {
