@@ -335,9 +335,9 @@ async function readCached<T>(
   request: Request,
   validate: (entry: unknown) => entry is T,
 ): Promise<CacheEnvelope<T> | null> {
-  const response = await caches.default.match(request);
-  if (!response) return null;
   try {
+    const response = await caches.default.match(request);
+    if (!response) return null;
     const value: unknown = await response.json();
     return isCacheEnvelope(value, validate) ? value : null;
   } catch {
