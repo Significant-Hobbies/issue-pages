@@ -15,7 +15,7 @@ interface Options {
   props?: Record<string, Scalar>;
 }
 
-const KEY = "ahk_pub_462ad03c764e086016fa4d57d303809fd8c480c06d0f6515";
+const KEY = "ahk_pub_360a0c19017b6745e5442b17d3e6bc2d9cf2f3e2589b5b3a6fb252354bfdcd77";
 const ENV = "production";
 const ENDPOINT = "https://ingest.sassmaker.com/v1/logs";
 
