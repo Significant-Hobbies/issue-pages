@@ -404,6 +404,58 @@ describe("public Worker routes", () => {
     );
   });
 
+  it("recovers from a GitHub-reader cache read failure through the public API", async () => {
+    const cacheMatch = vi
+      .spyOn(caches.default, "match")
+      .mockRejectedValue(new Error("cache backend unavailable"));
+    try {
+      const response = await exports.default.fetch(
+        new Request("http://localhost:8787/embed/acme/cache-read-failure"),
+      );
+      expect(response.status).toBe(200);
+      expect(await response.text()).toContain("A public reader issue");
+      expect(
+        readerRequests.some((entry) =>
+          entry.url.includes("/repos/acme/cache-read-failure/issues?"),
+        ),
+      ).toBe(true);
+    } finally {
+      cacheMatch.mockRestore();
+    }
+  });
+
+  it("serves a stale public copy when a fresh-cache read fails and GitHub is limited", async () => {
+    await seedStaleReaderIssue("stale-repo", 2 * 60 * 60 * 1_000);
+    const cacheMatch = vi
+      .spyOn(caches.default, "match")
+      .mockRejectedValueOnce(new Error("cache backend unavailable"));
+    try {
+      const response = await exports.default.fetch(
+        new Request("http://localhost:8787/embed/acme/stale-repo/issues/7/a-cached-public-issue"),
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-issuepages-reader-cache")).toBe("STALE");
+      expect(await response.text()).toContain("Last safe copy.");
+    } finally {
+      cacheMatch.mockRestore();
+    }
+  });
+
+  it("keeps GitHub's retryable error when both cache reads and the upstream read fail", async () => {
+    const cacheMatch = vi
+      .spyOn(caches.default, "match")
+      .mockRejectedValue(new Error("cache backend unavailable"));
+    try {
+      const response = await exports.default.fetch(
+        new Request("http://localhost:8787/embed/acme/rate-limited"),
+      );
+      expect(response.status).toBe(503);
+      expect(response.headers.get("retry-after")).toBe("60");
+    } finally {
+      cacheMatch.mockRestore();
+    }
+  });
+
   it("filters an embed by label and issue author and preserves both filters", async () => {
     const response = await exports.default.fetch(
       new Request(
