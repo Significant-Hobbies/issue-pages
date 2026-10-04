@@ -126,6 +126,18 @@ function header(site: SiteIdentity): string {
   </header>`;
 }
 
+function footerNavigation(site: SiteIdentity, slotted = false): string {
+  return `<nav${slotted ? ' slot="navigation"' : ""} data-fleet-footer-navigation aria-label="IssuePages navigation">
+    <ul class="site-footer__links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/search">Search</a></li>
+      <li><a href="${publishHref(site)}" rel="external noopener noreferrer">Publish</a></li>
+      <li><a href="${repoHref(site)}" rel="external noopener noreferrer" target="_blank" aria-label="GitHub repository" title="GitHub repository">${githubIcon}</a></li>
+    </ul>
+    <span>IssuePages is a readable view of a GitHub repository.</span>
+  </nav>`;
+}
+
 function footer(site: SiteIdentity): string {
   return `<footer class="site-footer">
     <div class="site-footer__inner">
@@ -192,7 +204,7 @@ export function layout(
   <meta name="twitter:description" content="${escapeHtml(description)}">
   <meta name="twitter:image" content="${socialImage}">
   <script type="application/ld+json">${safeJson(schema)}</script>
-  <link rel="stylesheet" href="/styles.css?v=20260826-10">
+  <link rel="stylesheet" href="/styles.css?v=20261005-footer-precise">
   ${options.polling ? '<script src="/article-poll.js?v=20260825-5" defer></script>' : ""}
   ${options.readerClient ? '<script type="module" src="/assets/reader.js?v=20260826-3"></script>' : ""}
   ${options.mermaid ? '<script type="module" src="/assets/mermaid.js?v=20260825-2"></script>' : ""}
@@ -204,14 +216,16 @@ export function layout(
   <a class="skip-link" href="#main">Skip to content</a>
   ${header(site)}
   <main id="main">${body}</main>
-  ${footer(site)}
   ${
     options.footerPromotion === false
-      ? ""
-      : `<saas-maker-newsletter-capture product-name="IssuePages" catalog-id="issue-pages" kind="newsletter" source="footer" privacy-url="https://sassmaker.com/privacy"></saas-maker-newsletter-capture>
+      ? footer(site)
+      : `<fleet-footer-extension data-fleet-footer-project="issue-pages" product-name="IssuePages" theme="light" art-src="/footer-art/issue-pages.webp?v=48cb385b" art-alt="A modest publishing press centers a blank issue sheet between source folios and an open display stand." art-width="2171" art-height="724" art-position="50% 50%" art-credit="Original illustration for IssuePages" font-base="/fonts/fleet-footer-precise-v1/">
+  ${footerNavigation(site, true)}
+  <saas-maker-newsletter-capture slot="capture" product-name="IssuePages" catalog-id="issue-pages" kind="newsletter" source="footer" privacy-url="https://sassmaker.com/privacy"></saas-maker-newsletter-capture>
+  </fleet-footer-extension>
   <script type="module" src="https://sassmaker.com/newsletter-capture.js"></script>
-  <script src="https://sassmaker.com/project-strip.js" data-project="issue-pages" defer></script>
-  <script src="https://sassmaker.com/ai-chat-footer.js" data-name="IssuePages" defer></script>`
+  <script src="https://sassmaker.com/project-strip.js?v=precise-b0adaa67" data-project="issue-pages" data-host-only="true" data-theme="light" defer></script>
+  <script src="https://sassmaker.com/ai-chat-footer.js?v=precise-b0adaa67" data-name="IssuePages" data-project="issue-pages" data-host-only="true" data-theme="light" defer></script>`
   }
 </body>
 </html>`;

@@ -326,6 +326,37 @@ describe("public Worker routes", () => {
     expect(body).toContain("Your GitHub issue is public immediately");
     expect(body).toContain("everyone else waits here for review");
     expect(body).toContain('href="/embed"');
+    expect(body.match(/<fleet-footer-extension\b/g)).toHaveLength(1);
+    expect(body.match(/data-fleet-footer-navigation/g)).toHaveLength(1);
+    expect(body).toContain('data-fleet-footer-project="issue-pages"');
+    expect(body).toContain('theme="light"');
+    expect(body).toContain('slot="navigation"');
+    expect(body).toContain('art-src="/footer-art/issue-pages.webp?v=48cb385b"');
+    expect(body).toContain('art-credit="Original illustration for IssuePages"');
+    expect(body).toContain('font-base="/fonts/fleet-footer-precise-v1/"');
+    expect(body).toContain('href="/search"');
+    expect(body).toContain(
+      'href="https://github.com/sarthakagrawal927/issue-pages/issues/new?template=publish.md"',
+    );
+    expect(body.match(/<saas-maker-newsletter-capture\b/g)).toHaveLength(1);
+    expect(body).toContain('slot="capture"');
+    expect(body).toContain('data-project="issue-pages" data-host-only="true" data-theme="light"');
+    expect(body).not.toContain('<footer class="site-footer">');
+    expect(body).toContain("/styles.css?v=20261005-footer-precise");
+    const styles = await exports.default.fetch(new Request("http://localhost:8787/styles.css"));
+    expect(styles.status).toBe(200);
+    expect(await styles.text()).toContain(".site-footer__links{display:flex");
+  });
+
+  it("keeps the existing native footer and omits the shared footer on not-found responses", async () => {
+    const response = await exports.default.fetch(new Request("http://localhost:8787/not-a-route"));
+    expect(response.status).toBe(404);
+    const body = await response.text();
+    expect(body).toContain('<footer class="site-footer">');
+    expect(body).toContain("IssuePages is a readable view of a GitHub repository.");
+    expect(body).not.toContain("fleet-footer-extension");
+    expect(body).not.toContain("data-fleet-footer-navigation");
+    expect(body).not.toContain("saas-maker-newsletter-capture");
   });
 
   it("redirects the permanent issue URL and renders the canonical article", async () => {
@@ -343,6 +374,8 @@ describe("public Worker routes", () => {
     const body = await response.text();
     expect(body).toContain("Hello <strong>world</strong>");
     expect(body).toContain('data-article-version="1"');
+    expect(body.match(/<fleet-footer-extension\b/g)).toHaveLength(1);
+    expect(body.match(/data-fleet-footer-navigation/g)).toHaveLength(1);
   });
 
   it("searches the D1 FTS index", async () => {
@@ -385,6 +418,8 @@ describe("public Worker routes", () => {
     const body = await response.text();
     expect(body).toContain("complete https://github.com/owner/repository URL");
     expect(body).toContain('<meta name="robots" content="noindex,nofollow,noarchive">');
+    expect(body).not.toContain("fleet-footer-extension");
+    expect(body).not.toContain("saas-maker-newsletter-capture");
   });
 
   it("builds a copy-paste embed and a live preview without calling GitHub server-side", async () => {
@@ -491,6 +526,8 @@ describe("public Worker routes", () => {
     expect(body).not.toContain("project-strip.js");
     expect(body).not.toContain("saas-maker-newsletter-capture");
     expect(body).toContain("<footer");
+    expect(body).not.toContain("fleet-footer-extension");
+    expect(body).not.toContain("data-fleet-footer-navigation");
   });
 
   it.each(["a-public-reader-issue", "discussion"])(
