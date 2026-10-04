@@ -1,5 +1,9 @@
 import type { SearchRow } from "../data/repository";
 import type { EmbedOptions } from "../lib/embed";
+import {
+  canonicalizeTransferredIssueUrl,
+  rewriteTransferredIssueHrefs,
+} from "../lib/issue-source-links";
 import type {
   PublicComment,
   PublicIssueDiscussion,
@@ -303,18 +307,20 @@ function reactionList(value: string, accessiblePrefix: string, sourceHref: strin
 
 function commentView(comment: CommentRow): string {
   const avatar = safeHttpsUrl(comment.author_avatar_url);
+  const sourceUrl = canonicalizeTransferredIssueUrl(comment.github_url);
   return `<article class="comment" id="comment-${comment.github_id}">
     ${avatar ? `<img class="avatar" src="${escapeHtml(avatar)}" width="48" height="48" loading="lazy" alt="">` : '<span class="avatar" aria-hidden="true"></span>'}
     <div>
-      <div class="comment__meta"><a href="/authors/${encodeURIComponent(comment.author_login)}">@${escapeHtml(comment.author_login)}</a> · ${datetime(comment.github_created_at)} · <a href="${escapeHtml(comment.github_url)}" rel="external">source ↗</a></div>
-      <div class="prose">${comment.body_html}</div>
-      ${reactionList(comment.reactions_json, `Comment by ${comment.author_login}`, comment.github_url)}
+      <div class="comment__meta"><a href="/authors/${encodeURIComponent(comment.author_login)}">@${escapeHtml(comment.author_login)}</a> · ${datetime(comment.github_created_at)} · <a href="${escapeHtml(sourceUrl)}" rel="external">source ↗</a></div>
+      <div class="prose">${rewriteTransferredIssueHrefs(comment.body_html)}</div>
+      ${reactionList(comment.reactions_json, `Comment by ${comment.author_login}`, sourceUrl)}
     </div>
   </article>`;
 }
 
 export function articlePage(article: ArticleRow, comments: CommentRow[]): string {
   const archived = article.state === "closed";
+  const sourceUrl = canonicalizeTransferredIssueUrl(article.github_url);
   const discussion = comments.length
     ? comments.map(commentView).join("")
     : '<div class="empty-state">No public replies yet. Discussion stays on the original GitHub issue.</div>';
@@ -329,12 +335,12 @@ export function articlePage(article: ArticleRow, comments: CommentRow[]): string
         <dt>Last edited</dt><dd>${datetime(article.github_updated_at)}</dd>
         <dt>Status</dt><dd>${archived ? "Archived" : "Published"}</dd>
       </dl>
-      <a class="button button--light" href="${escapeHtml(article.github_url)}" rel="external">Open on GitHub <span aria-hidden="true">↗</span></a>
+      <a class="button button--light" href="${escapeHtml(sourceUrl)}" rel="external">Open on GitHub <span aria-hidden="true">↗</span></a>
     </aside>
     <article class="article-pane">
       ${archived ? '<div class="archive-notice"><strong>Archived page.</strong> The source issue is closed; this page remains available as a record.</div>' : ""}
-      <div class="prose">${article.body_html}</div>
-      ${reactionList(article.reactions_json, "Article", article.github_url)}
+      <div class="prose">${rewriteTransferredIssueHrefs(article.body_html)}</div>
+      ${reactionList(article.reactions_json, "Article", sourceUrl)}
       <section class="discussion" aria-labelledby="discussion-title">
         <h2 id="discussion-title">Discussion <span>${comments.length}</span></h2>
         ${discussion}
