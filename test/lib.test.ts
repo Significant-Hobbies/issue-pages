@@ -31,7 +31,7 @@ afterEach(() => {
 describe("content primitives", () => {
   it("namespaces rendered article caches by schema", () => {
     expect(articleCacheKey("https://example.com", 42, 3).url).toBe(
-      "https://example.com/__cache/articles/v2/42/3",
+      "https://example.com/__cache/articles/v3/42/3",
     );
   });
 

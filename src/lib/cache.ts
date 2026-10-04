@@ -1,6 +1,6 @@
 import type { ArticleMutation } from "../data/repository";
 
-const ARTICLE_CACHE_SCHEMA = 2;
+const ARTICLE_CACHE_SCHEMA = 3;
 
 export function articleCacheKey(origin: string, issueNumber: number, revision: number): Request {
   const url = new URL(

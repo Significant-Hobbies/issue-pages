@@ -399,7 +399,7 @@ app.get("/sitemap.xml", async (c) => {
     cursor: null,
     includeArchived: true,
   });
-  const staticUrls = ["/", "/pages/newest", "/pages/updated", "/embed"];
+  const staticUrls = ["/", "/pages/newest", "/pages/updated"];
   const entries = [
     ...staticUrls.map((path) => ({ loc: `${publicOrigin}${path}`, lastmod: null })),
     ...articles.map((article) => ({
