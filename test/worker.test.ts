@@ -370,12 +370,39 @@ describe("public Worker routes", () => {
       new Request("http://localhost:8787/articles/42/a-tested-public-page"),
     );
     expect(response.status).toBe(200);
-    expect(response.headers.get("etag")).toBe('"article-42-1"');
+    expect(response.headers.get("etag")).toBe('"article-v4-42-1"');
     const body = await response.text();
     expect(body).toContain("Hello <strong>world</strong>");
     expect(body).toContain('data-article-version="1"');
     expect(body.match(/<fleet-footer-extension\b/g)).toHaveLength(1);
     expect(body.match(/data-fleet-footer-navigation/g)).toHaveLength(1);
+  });
+
+  it("skips retained v3 article HTML and caches the current template under v4", async () => {
+    const oldKey = new Request(`${env.PUBLIC_ORIGIN}/__cache/articles/v3/42/1`);
+    const currentKey = articleCacheKey(env.PUBLIC_ORIGIN, 42, 1);
+    await caches.default.delete(currentKey);
+    await caches.default.put(
+      oldKey,
+      new Response("stale v3 article markup", {
+        headers: { "Cache-Control": "public, s-maxage=86400" },
+      }),
+    );
+
+    const url = "http://localhost:8787/articles/42/a-tested-public-page";
+    const first = await exports.default.fetch(new Request(url));
+    const firstBody = await first.text();
+    expect(first.status).toBe(200);
+    expect(first.headers.get("x-issuepages-cache")).toBe("MISS");
+    expect(first.headers.get("etag")).toBe('"article-v4-42-1"');
+    expect(firstBody).not.toContain("stale v3 article markup");
+    expect(firstBody).toContain('layout="compact" integrated');
+
+    const second = await exports.default.fetch(new Request(url));
+    expect(second.headers.get("x-issuepages-cache")).toBe("HIT");
+    expect(await second.text()).toContain('layout="compact" integrated');
+    expect(await caches.default.match(oldKey)).toBeDefined();
+    expect(await caches.default.match(currentKey)).toBeDefined();
   });
 
   it("searches the D1 FTS index", async () => {
