@@ -1317,3 +1317,20 @@ describe("scheduled reaction reconciliation", () => {
     }
   });
 });
+
+describe("public sitemap indexing policy", () => {
+  it("omits the noindex embed while retaining article and listing URLs", async () => {
+    const sitemap = await exports.default.fetch(new Request("http://localhost:8787/sitemap.xml"));
+    expect(sitemap.status).toBe(200);
+    const xml = await sitemap.text();
+    const publicOrigin = "https://issues.sarthakagrawal.dev";
+    expect(xml).toContain(`${publicOrigin}/pages/newest`);
+    expect(xml).toContain(`${publicOrigin}/pages/updated`);
+    expect(xml).toContain(`${publicOrigin}/articles/42/a-tested-public-page`);
+    expect(xml).not.toContain(`${publicOrigin}/embed`);
+
+    const embed = await exports.default.fetch(new Request("http://localhost:8787/embed"));
+    expect(embed.status).toBe(200);
+    expect(embed.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+  });
+});
