@@ -1024,7 +1024,7 @@ app.get("/articles/:number/:slug", async (c) => {
   });
   const response = c.html(body, 200, {
     "Cache-Control": "public, max-age=0, s-maxage=86400",
-    ETag: `"article-${article.issue_number}-${article.public_revision}"`,
+    ETag: `"article-v4-${article.issue_number}-${article.public_revision}"`,
     "X-IssuePages-Cache": "MISS",
   });
   c.executionCtx.waitUntil(caches.default.put(key, response.clone()));
@@ -1173,6 +1173,7 @@ app.notFound((c) =>
       siteIdentity(c.env),
       "Page not found",
       errorPage(404, "Page not found", "That route is not part of the public repository."),
+      { footerPromotion: false },
     ),
     404,
   ),
@@ -1190,6 +1191,7 @@ app.onError((error, c) => {
         "Something went wrong",
         `The request could not be completed. Reference: ${requestId}`,
       ),
+      { footerPromotion: false },
     ),
     500,
     { "Cache-Control": "no-store" },

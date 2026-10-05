@@ -13,6 +13,7 @@
     "client:build:embed": "esbuild src/client/embed-loader.ts --bundle --format=iife --minify --outfile=public/embed.js",
     "client:build:mermaid": "esbuild src/client/mermaid.ts --bundle --format=esm --splitting --minify --outdir=public/assets --entry-names=mermaid --chunk-names=chunks/[name]-[hash]",
     "client:check": "node scripts/check-client-assets.mjs",
+    "footer:assets:check": "node scripts/check-footer-assets.mjs",
     "dev": "pnpm client:build && wrangler dev --port 8787",
     "types": "wrangler types ./worker-configuration.d.ts",
     "types:check": "wrangler types ./worker-configuration.d.ts --check",
@@ -25,7 +26,7 @@
     "test": "vitest run",
     "build": "pnpm client:build && wrangler deploy --dry-run --env=\"\" --outdir dist",
     "startup": "wrangler check startup",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm footer:assets:check",
     "deploy": "pnpm client:build && wrangler deploy --env production --tag $(git rev-parse HEAD)",
     "client:build:log": "esbuild src/client/app-health-log.ts --bundle --format=iife --minify --outfile=public/app-health-log.js"
   },

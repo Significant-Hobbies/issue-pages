@@ -144,6 +144,9 @@ mark{background:#fff8c5;color:inherit;padding:.05em .1em}.error-code{margin-bott
 .site-footer{border-top:1px solid var(--border)}
 .site-footer__inner{max-width:1040px;margin:0 auto;padding:1.5rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;color:var(--muted);font-size:.78rem}
 .site-footer a{color:inherit}
+.site-footer__links{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;min-width:0;margin:0;padding:0;list-style:none;color:var(--muted);font-size:.78rem}
+.site-footer__links li{display:flex;align-items:center;min-width:0}
+.site-footer__links a{color:inherit}
 
 @media(max-width:760px){
   .site-header__inner{gap:.5rem}.site-nav{gap:0}.nav-link{justify-content:center;padding-inline:.55rem}

@@ -1,0 +1,20 @@
+{
+  "product": "IssuePages",
+  "asset": "/footer-art/issue-pages.webp",
+  "credit": "Generated original illustration for IssuePages",
+  "source": {
+    "kind": "original owner-generated artwork",
+    "generator": "OpenAI image generation",
+    "date": "2026-10-05",
+    "sha256": "184929ee85761ac98147e7aa6fdd4c105752e4e4c9cfdd62eade84d8aa8ab374",
+    "dimensions": [2171, 724]
+  },
+  "derivative": {
+    "format": "WebP",
+    "sha256": "48cb385b690c316cd22f44254e3abcb94de63b1be85f515263615719513ec7ac",
+    "bytes": 155494,
+    "dimensions": [2171, 724],
+    "conversion": "Format-only cwebp -q 88 -m 6"
+  },
+  "license": "Original artwork created for IssuePages; no external source material included"
+}
