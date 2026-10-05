@@ -225,7 +225,7 @@ export function layout(
       ? footer(site)
       : `<fleet-footer-extension data-fleet-footer-project="issue-pages" product-name="IssuePages" theme="light" art-src="/footer-art/issue-pages.webp?v=48cb385b" art-alt="A modest publishing press centers a blank issue sheet between source folios and an open display stand." art-width="2171" art-height="724" art-position="50% 50%" art-credit="Original illustration for IssuePages" font-base="/fonts/fleet-footer-precise-v1/">
   ${footerNavigation(site, true)}
-  <saas-maker-newsletter-capture slot="capture" product-name="IssuePages" catalog-id="issue-pages" kind="newsletter" source="footer" privacy-url="https://sassmaker.com/privacy"></saas-maker-newsletter-capture>
+  <saas-maker-newsletter-capture slot="capture" product-name="IssuePages" catalog-id="issue-pages" kind="newsletter" source="footer" layout="compact" integrated privacy-url="https://sassmaker.com/privacy"></saas-maker-newsletter-capture>
   </fleet-footer-extension>
   <script type="module" src="https://sassmaker.com/newsletter-capture.js"></script>
   <script src="https://sassmaker.com/project-strip.js?v=precise-b0adaa67" data-project="issue-pages" data-host-only="true" data-theme="light" defer></script>
