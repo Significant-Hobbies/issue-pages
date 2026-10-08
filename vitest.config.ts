@@ -1,6 +1,6 @@
 import path from "node:path";
 import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [
@@ -18,6 +18,7 @@ export default defineConfig({
     })),
   ],
   test: {
+    exclude: [...configDefaults.exclude, "**/.agents/**", "**/.claude/**"],
     setupFiles: ["./test/setup.ts"],
   },
 });

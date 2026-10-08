@@ -127,7 +127,7 @@ function header(site: SiteIdentity): string {
 }
 
 function footer(site: SiteIdentity): string {
-  return `<footer class="site-footer">
+  return `<footer slot="navigation" data-fleet-footer-navigation class="site-footer">
     <div class="site-footer__inner">
       <span>IssuePages is a readable view of a GitHub repository.</span>
       <a href="${repoHref(site)}" rel="external noopener noreferrer" target="_blank" aria-label="GitHub repository" title="GitHub repository">${githubIcon}</a>
@@ -147,6 +147,7 @@ export function layout(
     reader?: boolean;
     readerClient?: boolean;
     robots?: boolean;
+    footerPromotion?: boolean;
   } = {},
 ): string {
   const pageTitle = title === "IssuePages" ? title : `${title} · IssuePages`;
@@ -203,11 +204,17 @@ export function layout(
   <a class="skip-link" href="#main">Skip to content</a>
   ${header(site)}
   <main id="main">${body}</main>
+  ${
+    options.footerPromotion === false
+      ? footer(site)
+      : `<fleet-footer-extension product-name="IssuePages" art-src="https://sassmaker.com/footer-art/issue-pages.webp">
   ${footer(site)}
-  <saas-maker-newsletter-capture product-name="IssuePages" catalog-id="issue-pages" kind="newsletter" source="footer" privacy-url="https://sassmaker.com/privacy"></saas-maker-newsletter-capture>
+  <saas-maker-newsletter-capture slot="capture" product-name="IssuePages" catalog-id="issue-pages" kind="newsletter" source="footer" privacy-url="https://sassmaker.com/privacy"></saas-maker-newsletter-capture>
+  </fleet-footer-extension>
   <script type="module" src="https://sassmaker.com/newsletter-capture.js"></script>
   <script src="https://sassmaker.com/project-strip.js" data-project="issue-pages" defer></script>
-  <script src="https://sassmaker.com/ai-chat-footer.js" data-name="IssuePages" defer></script>
+  <script src="https://sassmaker.com/ai-chat-footer.js" data-name="IssuePages" defer></script>`
+  }
 </body>
 </html>`;
 }
@@ -619,7 +626,7 @@ export function readerErrorPage(
   code: number,
   heading: string,
   detail: string,
-  options: { repositoryHref?: string; retryHref?: string } = {},
+  options: { repositoryHref?: string; repositoryLabel?: string; retryHref?: string } = {},
 ): string {
   return `<div class="listing-shell">
     <div class="error-code" aria-hidden="true">${code}</div>
@@ -627,7 +634,7 @@ export function readerErrorPage(
     <p class="listing-intro">${escapeHtml(detail)}</p>
     <div class="reader-actions reader-actions--error">
       ${options.retryHref ? `<a class="button" href="${escapeHtml(options.retryHref)}">Try again →</a>` : ""}
-      ${options.repositoryHref ? `<a class="button button--light" href="${escapeHtml(options.repositoryHref)}">Back to repository</a>` : ""}
+      ${options.repositoryHref ? `<a class="button button--light" href="${escapeHtml(options.repositoryHref)}">${escapeHtml(options.repositoryLabel ?? "Back to repository")}</a>` : ""}
       <a class="text-link" href="/read">Choose another repository</a>
     </div>
   </div>`;

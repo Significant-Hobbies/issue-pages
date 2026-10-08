@@ -1,6 +1,6 @@
-import { type Context, Hono } from "hono";
-import { createAppHealthClient, type AppHealthClient } from "@saas-maker/app-health";
+import { type AppHealthClient, createAppHealthClient } from "@saas-maker/app-health";
 import { honoMiddleware } from "@saas-maker/app-health/hono";
+import { type Context, Hono } from "hono";
 import { decideModeration, listModerationQueue } from "./admin/handler";
 import {
   getArticleByIssueNumber,
@@ -195,6 +195,7 @@ function readerHtml(
       canonicalPath: c.req.path,
       description: "Read public GitHub issues as clean, read-only pages.",
       reader: true,
+      footerPromotion: status === 200,
       ...(options.readerClient === undefined ? {} : { readerClient: options.readerClient }),
       robots: true,
       ...(options.mermaid === undefined ? {} : { mermaid: options.mermaid }),
@@ -222,7 +223,7 @@ function readerHtml(
 function readerError(c: Context<AppEnv>, error: unknown): Response {
   const repository = parsePublicRepository(`${c.req.param("owner")}/${c.req.param("repo")}`);
   const repositoryHref = repository
-    ? `/github/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.repo)}`
+    ? `https://github.com/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.repo)}/issues`
     : undefined;
   const requestUrl = new URL(c.req.url);
   const retryHref = `${requestUrl.pathname}${requestUrl.search}`;
@@ -235,7 +236,9 @@ function readerError(c: Context<AppEnv>, error: unknown): Response {
           404,
           "Public issues unavailable",
           "The repository or issue may be missing, private, or have issues disabled.",
-          { ...(repositoryHref ? { repositoryHref } : {}) },
+          {
+            ...(repositoryHref ? { repositoryHref, repositoryLabel: "Open issues on GitHub" } : {}),
+          },
         ),
         { status: 404 },
       );
@@ -249,7 +252,10 @@ function readerError(c: Context<AppEnv>, error: unknown): Response {
         error.code === "rate_limited"
           ? "The shared public GitHub allowance is exhausted. Wait a minute and try again."
           : "The public reader could not refresh this repository. Try again shortly.",
-        { retryHref, ...(repositoryHref ? { repositoryHref } : {}) },
+        {
+          retryHref,
+          ...(repositoryHref ? { repositoryHref, repositoryLabel: "Open issues on GitHub" } : {}),
+        },
       ),
       { status: 503 },
     );
